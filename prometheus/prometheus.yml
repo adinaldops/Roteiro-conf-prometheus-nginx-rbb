@@ -1,0 +1,73 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+# Rule files specifies a list of globs. Rules and alerts are read from
+# all matching files.
+rule_files:
+  - /etc/prometheus/rules.yml
+  - rules/*.yml
+
+scrape_configs:
+
+  # Job para coletar as métricas de outras organizações.
+  # Inclua aqui os alvos das outras organizações (Prometheus expostos).
+  - job_name: rbb-federado
+    honor_labels: false
+    metrics_path: '/federate'
+    scheme: https                                        #Define a comunicação entre os promethues com https
+    tls_config:                                          # Configurações de TLS para comunicação segura
+      cert_file: /etc/prometheus/certs/certificado.crt   # Caminho para o certificado do serivdor (O mesmo certificado que deve ser disponibilizado para  as Organiza~çoes no Git Hub (https://github.com/RBBNet/participantes/tree/main/lab/certificados)
+      key_file: /etc/prometheus/certs/chave-privada.key  # Caminho para a chave privada do certificado
+      insecure_skip_verify: true                         # Ignora a verificação do certificado
+    params:
+      'match[]':
+        - '{job="rbb"}'
+    static_configs:
+      - targets: [ '192.168.35.131:8443']          #Prometheus PUC-Rio
+        labels:
+          organization: 'DATAPREV'
+      - targets: [ '177.125.143.67:8443' ]       # Prometheus CPqD
+        labels:
+          organization: 'CPqD'
+      - targets: [ '200.159.252.33:8443']        # Prometheus RNP
+        labels:
+          organization: 'RNP'
+      - targets: [ '200.225.100.107:8443']       # Prometheus BNDES
+        labels:
+          organization: 'BNDES'
+      - targets: [ '200.198.62.157:8443']        # Prometheus PRODEMGE
+        labels:
+          organization: 'PRODEMGE'
+      - targets: [ '138.186.96.155:8443']        # Prometheus TCU LINK1
+        labels:
+          organization: 'TCU1'
+      - targets: [ '138.186.98.155:8443']        # Prometheus TCU LINK2
+        labels:
+          organization: 'TCU2'
+      - targets: [ '161.148.126.65:8443']        # Prometheus SERPRO
+        labels:
+          organization: 'SERPRO'
+    metric_relabel_configs:
+    - source_labels: ["exported_instance"]
+      target_label: "instance"
+    - source_labels: ["exported_organization"]
+      target_label: "organization"
+    - action: "labeldrop"
+      regex: "^exported_.*"
+
+  # Job para coleta das métricas locais.
+  # Inclua aqui os alvos de sua organização (métricas do boot, validator, writer e prometheus)
+  - job_name: rbb 
+    static_configs:
+      - targets: [ '192.168.35.106:9545' ]
+        labels:
+          node: 'boot'
+          organization: 'DATAPREV'
+          instance: 'boot01.lab.rbb.dataprev'
+      - targets: [ '192.168.35.111:9545' ]
+        labels:
+          node: 'validator01'
+          organization: 'DATAPREV'
+          instance: 'validator01.lab.rbb.dataprev'
+

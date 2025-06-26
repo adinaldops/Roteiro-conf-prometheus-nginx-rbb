@@ -1,0 +1,31 @@
+groups:
+- name: blockchain alerts
+  rules:
+  # Alerts
+  ## node offline
+  - alert: NodeOffline
+    expr: up == 0
+    for: 30s
+    labels:
+      severity: page
+    annotations:
+      summary: "{{ $labels.instance | stripPort }} is offline"
+      description: "{{ $labels.instance | stripPort }} is offline"
+  ## node out of sync
+  - alert: NodeOutOfSync
+    expr: node_block_height_distance_from_tip > 10
+    for: 30s
+    labels:
+      severity: page
+    annotations:
+      summary: "{{ $labels.instance | stripPort }} is out of sync"
+      description: "{{ $labels.instance | stripPort }} is {{ $value }} blocks behind"
+  ## node generation out of schedule
+  - alert: BlockGenerationOutOfSchedule
+    expr: blockchain_block_generation_interval_distance_from_target:rate1m > (4 * 50/100)
+    for: 30s
+    labels:
+      severity: page
+    annotations:
+      summary: "block generation is out of schedule"
+      description: "block generation is out of schedule"
