@@ -1,0 +1,30 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+version: '3'
+services:
+  prometheus:                                              #Conteiner do Prometheus
+    image: prom/prometheus                                 #Image Promethues 
+    command: --config.file=/etc/prometheus/prometheus.yml
+    volumes:                                               # Monta volumes para persistir e compartilhar dados
+      - ./prometheus:/etc/prometheus                       # Monta o diretório local 'prometheus' para o Prometheus
+      - ./nginx/certs:/etc/prometheus/certs                # Monta o diretório local de certificados para acesso pelo Prometheus
+    networks:                                              # Define as redes em que o serviço será inserido
+     - monitoracao                                         # Adiciona o Prometheus à rede "monitoracao"
+  nginx:                     
+    image: nginx:latest      
+    ports:                                                 # Define as portas que serão expostas para o Nginx
+      - "8443:8443"                                        # Exposição da porta 8443 para acesso seguro ao Promethues, atraves do Nginx
+      - "443:443"                                          # Exposição da porta 443 para acesso HTTPS ao Prometheus
+        
+    volumes:                
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro        # Monta o arquivo de configuração do Nginx
+      - ./nginx/certs:/etc/nginx/certs:ro                  # Monta o diretório de certificados
+      - ./nginx/logs/access.log:/var/log/nginx/access.log  # Monta o log de acesso do Nginx
+      - ./nginx/logs/error.log:/var/log/nginx/error.log    # Monta o log de erros do Nginx
+      - ./nginx/.htpasswd:/etc/nginx/.htpasswd:ro          # Monta o arquivo de autenticação básica
+    networks:                                              # Define as redes em que o Nginx estará presente
+      - monitoracao                                        # Adiciona o Nginx à rede "monitoracao"
+networks:                                                  
+  monitoracao:                                             # Declara a rede "monitoracao" para comunicação interna entre os serviços

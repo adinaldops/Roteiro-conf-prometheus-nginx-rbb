@@ -1,0 +1,19 @@
+groups:
+- name: blockchain metrics
+  rules:
+  # Records
+  ## blockchain tip
+  - record: blockchain_tip
+    expr: max(ethereum_best_known_block_number)
+  ## node block height distance from tip
+  - record: node_block_height_distance_from_tip
+    expr: blockchain_tip - on() group_right() ethereum_best_known_block_number
+  ## blockchain block generation rate
+  - record: blockchain_block_generation_rate:rate1m
+    expr: quantile(0.5, rate(ethereum_best_known_block_number[1m]))
+  ## blockchain block generation interval
+  - record: blockchain_block_generation_interval:rate1m
+    expr: 1 / blockchain_block_generation_rate:rate1m
+  ## blockchain block generation interval distance from target
+  - record: blockchain_block_generation_interval_distance_from_target:rate1m
+    expr: abs(blockchain_block_generation_interval:rate1m - 4)
